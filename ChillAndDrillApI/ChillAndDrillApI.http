@@ -1,0 +1,5 @@
+@ChillAndDrillApI_HostAddress = http://localhost:5252
+GET {{ChillAndDrillApI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

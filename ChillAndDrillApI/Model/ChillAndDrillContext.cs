@@ -1,4 +1,5 @@
-﻿using System;
+﻿// ChillAndDrillApI/Model/ChillAndDrillContext.cs
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using ChillAndDrillApI.Model;
@@ -17,27 +18,16 @@ public partial class ChillAndDrillContext : DbContext
     }
 
     public virtual DbSet<Address> Addresses { get; set; }
-
     public virtual DbSet<Cart> Carts { get; set; }
-
     public virtual DbSet<CartItem> CartItems { get; set; }
-
     public virtual DbSet<Event> Events { get; set; }
-
     public virtual DbSet<MenuCategory> MenuCategories { get; set; }
-
     public virtual DbSet<MenuItem> MenuItems { get; set; }
-
     public virtual DbSet<Order> Orders { get; set; }
-
     public virtual DbSet<OrderItem> OrderItems { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
-
     public virtual DbSet<Table> Tables { get; set; }
-
     public virtual DbSet<TableReservation> TableReservations { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -92,21 +82,21 @@ public partial class ChillAndDrillContext : DbContext
                 .HasConstraintName("carts_user_id_fkey");
         });
 
-      modelBuilder.Entity<CartItem>(entity =>
-{
-    entity.HasKey(e => e.Id).HasName("cart_items_pkey");
-    entity.ToTable("cart_items");
-    entity.Property(e => e.Id).HasColumnName("id");
-    entity.Property(e => e.CartId).HasColumnName("cart_id");
-    entity.Property(e => e.CreatedAt)
-        .HasDefaultValueSql("CURRENT_TIMESTAMP")
-        .HasColumnType("timestamp without time zone")
-        .HasColumnName("created_at");
-    entity.Property(e => e.MenuItemId).HasColumnName("menu_item_id");
-    entity.Property(e => e.Quantity)
-        .HasDefaultValue(1)
-        .HasColumnName("quantity");
-});
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("cart_items_pkey");
+            entity.ToTable("cart_items");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CartId).HasColumnName("cart_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.MenuItemId).HasColumnName("menu_item_id");
+            entity.Property(e => e.Quantity)
+                .HasDefaultValue(1)
+                .HasColumnName("quantity");
+        });
 
         modelBuilder.Entity<Event>(entity =>
         {
@@ -139,7 +129,6 @@ public partial class ChillAndDrillContext : DbContext
             entity.ToTable("menu_categories");
 
             entity.HasIndex(e => e.Name, "menu_categories_name_key").IsUnique();
-
             entity.HasIndex(e => e.Slug, "menu_categories_slug_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -164,7 +153,9 @@ public partial class ChillAndDrillContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.ImageData).HasColumnName("image_data");
+            entity.Property(e => e.ImageUrl) // Исправляем ImageData на ImageUrl
+                .HasMaxLength(255) // Устанавливаем максимальную длину, как у других полей (например, image_url в events)
+                .HasColumnName("image_url");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
@@ -311,7 +302,6 @@ public partial class ChillAndDrillContext : DbContext
             entity.ToTable("users");
 
             entity.HasIndex(e => e.Email, "users_email_key").IsUnique();
-
             entity.HasIndex(e => e.Login, "users_login_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
@@ -351,5 +341,5 @@ public partial class ChillAndDrillContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 
-public DbSet<ChillAndDrillApI.Model.CategoryDTO> CategoryDTO { get; set; } = default!;
+    public DbSet<ChillAndDrillApI.Model.CategoryDTO> CategoryDTO { get; set; } = default!;
 }

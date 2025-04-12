@@ -1,4 +1,5 @@
-﻿using System;
+﻿// ChillAndDrillApI/Controllers/MenuItemsController.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,6 +20,8 @@ namespace ChillAndDrillApI.Controllers
         {
             _context = context;
         }
+
+        // GET: api/MenuItems
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MenuItemResponseDTO>>> GetMenuItems()
         {
@@ -31,7 +34,7 @@ namespace ChillAndDrillApI.Controllers
                     Name = m.Name,
                     Description = m.Description,
                     Price = m.Price,
-                    ImageUrl = m.ImageData != null ? $"/api/MenuItems/image/{m.Id}" : null,
+                    ImageUrl = m.ImageUrl, // Теперь используем ImageUrl напрямую
                     CategoryName = m.Category.Name
                 })
                 .ToListAsync();
@@ -50,7 +53,7 @@ namespace ChillAndDrillApI.Controllers
                     Name = m.Name,
                     Description = m.Description,
                     Price = m.Price,
-                    ImageUrl = m.ImageData != null ? $"/api/MenuItems/image/{m.Id}" : null,
+                    ImageUrl = m.ImageUrl, // Теперь используем ImageUrl напрямую
                     CategoryName = m.Category.Name
                 })
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -63,22 +66,9 @@ namespace ChillAndDrillApI.Controllers
             return menuItem;
         }
 
-        // GET: api/MenuItems/image/5
-        [HttpGet("image/{id}")]
-        public async Task<IActionResult> GetMenuItemImage(int id)
-        {
-            var menuItem = await _context.MenuItems.FindAsync(id);
-            if (menuItem == null || menuItem.ImageData == null)
-            {
-                return NotFound();
-            }
-
-            return File(menuItem.ImageData, "image/jpeg"); // Укажи нужный MIME-тип, например "image/jpeg" или "image/png"
-        }
-
         // PUT: api/MenuItems/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMenuItem(int id, [FromForm] MenuItemDTO menuItemDTO)
+        public async Task<IActionResult> PutMenuItem(int id, [FromBody] MenuItemDTO menuItemDTO)
         {
             if (id != menuItemDTO.Id)
             {
@@ -95,14 +85,8 @@ namespace ChillAndDrillApI.Controllers
             menuItem.Name = menuItemDTO.Name;
             menuItem.Description = menuItemDTO.Description;
             menuItem.Price = menuItemDTO.Price;
+            menuItem.ImageUrl = menuItemDTO.ImageUrl;
             menuItem.UpdatedAt = DateTime.Now;
-
-            if (menuItemDTO.Image != null)
-            {
-                using var memoryStream = new MemoryStream();
-                await menuItemDTO.Image.CopyToAsync(memoryStream);
-                menuItem.ImageData = memoryStream.ToArray();
-            }
 
             try
             {
@@ -125,7 +109,7 @@ namespace ChillAndDrillApI.Controllers
 
         // POST: api/MenuItems
         [HttpPost]
-        public async Task<ActionResult<MenuItem>> PostMenuItem([FromForm] MenuItemDTO menuItemDTO)
+        public async Task<ActionResult<MenuItem>> PostMenuItem([FromBody] MenuItemDTO menuItemDTO)
         {
             var menuItem = new MenuItem
             {
@@ -133,16 +117,10 @@ namespace ChillAndDrillApI.Controllers
                 Name = menuItemDTO.Name,
                 Description = menuItemDTO.Description,
                 Price = menuItemDTO.Price,
+                ImageUrl = menuItemDTO.ImageUrl,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-
-            if (menuItemDTO.Image != null)
-            {
-                using var memoryStream = new MemoryStream();
-                await menuItemDTO.Image.CopyToAsync(memoryStream);
-                menuItem.ImageData = memoryStream.ToArray();
-            }
 
             _context.MenuItems.Add(menuItem);
             await _context.SaveChangesAsync();
@@ -172,7 +150,6 @@ namespace ChillAndDrillApI.Controllers
         }
     }
 
-    // DTO для возврата блюд
     public class MenuItemResponseDTO
     {
         public int Id { get; set; }
@@ -184,7 +161,6 @@ namespace ChillAndDrillApI.Controllers
         public string CategoryName { get; set; } = null!;
     }
 
-    // DTO для создания/обновления блюд
     public class MenuItemDTO
     {
         public int Id { get; set; }
@@ -192,6 +168,6 @@ namespace ChillAndDrillApI.Controllers
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public decimal Price { get; set; }
-        public IFormFile? Image { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

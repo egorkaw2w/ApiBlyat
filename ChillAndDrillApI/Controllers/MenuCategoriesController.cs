@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿// ChillAndDrillApI/Controllers/MenuCategoriesController.cs
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -9,25 +10,43 @@ namespace ChillAndDrillApI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class MenuCategoriesController : ControllerBase
     {
         private readonly ChillAndDrillContext _context;
 
-        public CategoriesController(ChillAndDrillContext context)
+        public MenuCategoriesController(ChillAndDrillContext context)
         {
             _context = context;
         }
 
+        // GET: api/MenuCategories
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
+        public async Task<ActionResult<IEnumerable<MenuCategory>>> GetMenuCategories()
         {
-            return await _context.MenuCategories
-                .Select(c => new CategoryDTO
+            var categories = await _context.MenuCategories
+                .Select(c => new MenuCategory
                 {
                     Id = c.Id,
-                    Name = c.Name
+                    Name = c.Name,
+                    Slug = c.Slug
                 })
                 .ToListAsync();
+
+            return Ok(categories);
+        }
+
+        // GET: api/MenuCategories/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MenuCategory>> GetMenuCategory(int id)
+        {
+            var category = await _context.MenuCategories.FindAsync(id);
+
+            if (category == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(category);
         }
     }
 }

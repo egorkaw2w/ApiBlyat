@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿// ChillAndDrillApI/Model/MenuItem.cs
 namespace ChillAndDrillApI.Model;
 
 public partial class MenuItem
@@ -19,7 +17,7 @@ public partial class MenuItem
 
     public DateTime? UpdatedAt { get; set; }
 
-    public byte[]? ImageData { get; set; }
+    public string? ImageUrl { get; set; } // Заменяем byte[]? ImageData на string? ImageUrl
 
     public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 

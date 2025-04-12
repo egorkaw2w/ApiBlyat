@@ -1,8 +1,8 @@
-﻿using System;
+﻿// ChillAndDrillApI/Controllers/OrdersController.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChillAndDrillApI.Model;
@@ -20,18 +20,111 @@ namespace ChillAndDrillApI.Controllers
             _context = context;
         }
 
-        // GET: api/Orders
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        // POST: api/Orders
+        [HttpPost]
+        public async Task<ActionResult<OrderResponseDTO>> PostOrder(OrderCreateDTO orderDto)
         {
-            return await _context.Orders.ToListAsync();
+            // Проверяем существование пользователя
+            var user = await _context.Users.FindAsync(orderDto.UserId);
+            if (user == null)
+            {
+                return BadRequest("Пользователь не найден");
+            }
+
+            // Проверяем существование адреса
+            var address = await _context.Addresses.FindAsync(orderDto.AddressId);
+            if (address == null)
+            {
+                return BadRequest("Адрес не найден");
+            }
+
+            // Проверяем, что есть элементы заказа
+            if (orderDto.OrderItems == null || !orderDto.OrderItems.Any())
+            {
+                return BadRequest("Заказ должен содержать хотя бы один товар");
+            }
+
+            // Проверяем существование всех MenuItems
+            foreach (var item in orderDto.OrderItems)
+            {
+                var menuItem = await _context.MenuItems.FindAsync(item.MenuItemId);
+                if (menuItem == null)
+                {
+                    return BadRequest($"Товар с ID {item.MenuItemId} не найден");
+                }
+            }
+
+            // Создаём заказ
+            var order = new Order
+            {
+                UserId = orderDto.UserId,
+                AddressId = orderDto.AddressId,
+                TotalPrice = orderDto.TotalPrice,
+                Status = orderDto.Status,
+                CreatedAt = DateTime.Now,
+                OrderItems = orderDto.OrderItems.Select(item => new OrderItem
+                {
+                    MenuItemId = item.MenuItemId,
+                    Quantity = item.Quantity,
+                    PriceAtOrder = item.PriceAtOrder
+                }).ToList()
+            };
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            // Формируем ответ
+            var orderResponse = await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.MenuItem)
+                .Where(o => o.Id == order.Id)
+                .Select(o => new OrderResponseDTO
+                {
+                    Id = o.Id,
+                    UserId = o.UserId,
+                    AddressId = o.AddressId,
+                    TotalPrice = o.TotalPrice,
+                    Status = o.Status,
+                    CreatedAt = o.CreatedAt,
+                    OrderItems = o.OrderItems.Select(oi => new OrderItemResponseDTO
+                    {
+                        Id = oi.Id,
+                        MenuItemId = oi.MenuItemId,
+                        MenuItemName = oi.MenuItem.Name,
+                        Quantity = oi.Quantity,
+                        PriceAtOrder = oi.PriceAtOrder
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            return CreatedAtAction("GetOrder", new { id = orderResponse.Id }, orderResponse);
         }
 
-        // GET: api/Orders/5
+        // Для полноты добавим GET, если его нет
         [HttpGet("{id}")]
-        public async Task<ActionResult<Order>> GetOrder(int id)
+        public async Task<ActionResult<OrderResponseDTO>> GetOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.MenuItem)
+                .Select(o => new OrderResponseDTO
+                {
+                    Id = o.Id,
+                    UserId = o.UserId,
+                    AddressId = o.AddressId,
+                    TotalPrice = o.TotalPrice,
+                    Status = o.Status,
+                    CreatedAt = o.CreatedAt,
+                    OrderItems = o.OrderItems.Select(oi => new OrderItemResponseDTO
+                    {
+                        Id = oi.Id,
+                        MenuItemId = oi.MenuItemId,
+                        MenuItemName = oi.MenuItem.Name,
+                        Quantity = oi.Quantity,
+                        PriceAtOrder = oi.PriceAtOrder
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
             {
@@ -39,69 +132,6 @@ namespace ChillAndDrillApI.Controllers
             }
 
             return order;
-        }
-
-        // PUT: api/Orders/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrder(int id, Order order)
-        {
-            if (id != order.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(order).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!OrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Orders
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Order>> PostOrder(Order order)
-        {
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetOrder", new { id = order.Id }, order);
-        }
-
-        // DELETE: api/Orders/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool OrderExists(int id)
-        {
-            return _context.Orders.Any(e => e.Id == id);
         }
     }
 }

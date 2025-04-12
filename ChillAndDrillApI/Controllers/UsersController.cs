@@ -32,7 +32,16 @@ namespace ChillAndDrillApI.Controllers
         public async Task<IActionResult> GetUsers()
         {
             _logger.LogInformation("Fetching all users");
-            var users = await _context.Users.ToListAsync();
+            var users = await _context.Users
+                .Where(u => u.RoleId != 1) // Исключаем клиентов
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.Role.Name, 
+                    u.CreatedAt
+                })
+                .ToListAsync();
             return ApiResponse(users);
         }
 
@@ -114,7 +123,7 @@ namespace ChillAndDrillApI.Controllers
                 Phone = request.Phone,
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 BirthDate = request.BirthDate,
                 AvatarUrl = request.AvatarUrl
                 // Gender отсутствует в модели, добавить в User.cs, если нужно

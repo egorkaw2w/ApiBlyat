@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using ChillAndDrillApI.Model;
 
 namespace ChillAndDrillApI.Model;
 
@@ -41,7 +42,7 @@ public partial class ChillAndDrillContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=ChillAndDrill;Username=postgres");
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=ChillAndDrill;Username=postgres;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,31 +92,21 @@ public partial class ChillAndDrillContext : DbContext
                 .HasConstraintName("carts_user_id_fkey");
         });
 
-        modelBuilder.Entity<CartItem>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("cart_items_pkey");
-
-            entity.ToTable("cart_items");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CartId).HasColumnName("cart_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("created_at");
-            entity.Property(e => e.MenuItemId).HasColumnName("menu_item_id");
-            entity.Property(e => e.Quantity)
-                .HasDefaultValue(1)
-                .HasColumnName("quantity");
-
-            entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
-                .HasForeignKey(d => d.CartId)
-                .HasConstraintName("cart_items_cart_id_fkey");
-
-            entity.HasOne(d => d.MenuItem).WithMany(p => p.CartItems)
-                .HasForeignKey(d => d.MenuItemId)
-                .HasConstraintName("cart_items_menu_item_id_fkey");
-        });
+      modelBuilder.Entity<CartItem>(entity =>
+{
+    entity.HasKey(e => e.Id).HasName("cart_items_pkey");
+    entity.ToTable("cart_items");
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.CartId).HasColumnName("cart_id");
+    entity.Property(e => e.CreatedAt)
+        .HasDefaultValueSql("CURRENT_TIMESTAMP")
+        .HasColumnType("timestamp without time zone")
+        .HasColumnName("created_at");
+    entity.Property(e => e.MenuItemId).HasColumnName("menu_item_id");
+    entity.Property(e => e.Quantity)
+        .HasDefaultValue(1)
+        .HasColumnName("quantity");
+});
 
         modelBuilder.Entity<Event>(entity =>
         {
@@ -173,9 +164,7 @@ public partial class ChillAndDrillContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.ImageUrl)
-                .HasMaxLength(255)
-                .HasColumnName("image_url");
+            entity.Property(e => e.ImageData).HasColumnName("image_data");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
@@ -361,4 +350,6 @@ public partial class ChillAndDrillContext : DbContext
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
+public DbSet<ChillAndDrillApI.Model.CategoryDTO> CategoryDTO { get; set; } = default!;
 }

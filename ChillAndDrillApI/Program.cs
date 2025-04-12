@@ -1,9 +1,9 @@
-// ChillAndDrillApI/Program.cs
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using ChillAndDrillApI.Model; // Убедись, что пространство имён для ChillAndDrillContext правильное
+using ChillAndDrillApI.Model;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,8 +22,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ChillAndDrillContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Добавляем сервисы контроллеров
-builder.Services.AddControllers();
+// Добавляем сервисы контроллеров с настройкой JSON сериализации
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; // Игнорируем циклы
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // Игнорируем null-поля
+    });
 
 // Добавляем Swagger
 builder.Services.AddSwaggerGen(c =>

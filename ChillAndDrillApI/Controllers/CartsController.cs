@@ -20,18 +20,66 @@ namespace ChillAndDrillApI.Controllers
             _context = context;
         }
 
-        // GET: api/Carts
+        // GET: api/Carts?userId=5
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Cart>>> GetCarts()
+        public async Task<ActionResult<IEnumerable<CartResponseDTO>>> GetCarts(int? userId)
         {
-            return await _context.Carts.ToListAsync();
+            var query = _context.Carts
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.MenuItem)
+                .AsQueryable();
+
+            if (userId.HasValue)
+            {
+                query = query.Where(c => c.UserId == userId.Value);
+            }
+
+            var carts = await query
+                .Select(c => new CartResponseDTO
+                {
+                    Id = c.Id,
+                    UserId = c.UserId,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
+                    CartItems = c.CartItems.Select(ci => new CartItemResponseDTO
+                    {
+                        Id = ci.Id,
+                        MenuItemId = ci.MenuItemId,
+                        MenuItemName = ci.MenuItem.Name,
+                        MenuItemPrice = ci.MenuItem.Price,
+                        Quantity = ci.Quantity,
+                        CreatedAt = ci.CreatedAt
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return carts;
         }
 
         // GET: api/Carts/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Cart>> GetCart(int id)
+        public async Task<ActionResult<CartResponseDTO>> GetCart(int id)
         {
-            var cart = await _context.Carts.FindAsync(id);
+            var cart = await _context.Carts
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.MenuItem)
+                .Select(c => new CartResponseDTO
+                {
+                    Id = c.Id,
+                    UserId = c.UserId,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
+                    CartItems = c.CartItems.Select(ci => new CartItemResponseDTO
+                    {
+                        Id = ci.Id,
+                        MenuItemId = ci.MenuItemId,
+                        MenuItemName = ci.MenuItem.Name,
+                        MenuItemPrice = ci.MenuItem.Price,
+                        Quantity = ci.Quantity,
+                        CreatedAt = ci.CreatedAt
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync(c => c.Id == id);
 
             if (cart == null)
             {
@@ -42,7 +90,6 @@ namespace ChillAndDrillApI.Controllers
         }
 
         // PUT: api/Carts/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCart(int id, Cart cart)
         {
@@ -73,10 +120,11 @@ namespace ChillAndDrillApI.Controllers
         }
 
         // POST: api/Carts
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Cart>> PostCart(Cart cart)
         {
+            cart.CreatedAt = DateTime.Now;
+            cart.UpdatedAt = DateTime.Now;
             _context.Carts.Add(cart);
             await _context.SaveChangesAsync();
 

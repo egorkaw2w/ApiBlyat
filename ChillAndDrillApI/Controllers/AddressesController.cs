@@ -1,8 +1,8 @@
-﻿using System;
+﻿// ChillAndDrillApI/Controllers/AddressesController.cs
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChillAndDrillApI.Model;
@@ -20,18 +20,43 @@ namespace ChillAndDrillApI.Controllers
             _context = context;
         }
 
-        // GET: api/Addresses
+        // GET: api/Addresses?userId=5
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Address>>> GetAddresses()
+        public async Task<ActionResult<IEnumerable<AddressResponseDTO>>> GetAddresses(int? userId)
         {
-            return await _context.Addresses.ToListAsync();
+            var query = _context.Addresses.AsQueryable();
+
+            if (userId.HasValue)
+            {
+                query = query.Where(a => a.UserId == userId.Value);
+            }
+
+            var addresses = await query
+                .Select(a => new AddressResponseDTO
+                {
+                    Id = a.Id,
+                    UserId = a.UserId,
+                    AddressText = a.AddressText,
+                    IsDefault = a.IsDefault
+                })
+                .ToListAsync();
+
+            return addresses;
         }
 
         // GET: api/Addresses/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Address>> GetAddress(int id)
+        public async Task<ActionResult<AddressResponseDTO>> GetAddress(int id)
         {
-            var address = await _context.Addresses.FindAsync(id);
+            var address = await _context.Addresses
+                .Select(a => new AddressResponseDTO
+                {
+                    Id = a.Id,
+                    UserId = a.UserId,
+                    AddressText = a.AddressText,
+                    IsDefault = a.IsDefault
+                })
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (address == null)
             {
@@ -41,14 +66,83 @@ namespace ChillAndDrillApI.Controllers
             return address;
         }
 
-        // PUT: api/Addresses/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAddress(int id, Address address)
+        // POST: api/Addresses
+        [HttpPost]
+        public async Task<ActionResult<AddressResponseDTO>> PostAddress(AddressCreateDTO addressDto)
         {
-            if (id != address.Id)
+            // Проверяем существование пользователя
+            var user = await _context.Users.FindAsync(addressDto.UserId);
+            if (user == null)
             {
-                return BadRequest();
+                return BadRequest("Пользователь не найден");
+            }
+
+            // Если адрес помечен как IsDefault, сбрасываем IsDefault у других адресов
+            if (addressDto.IsDefault)
+            {
+                var existingDefaults = await _context.Addresses
+                    .Where(a => a.UserId == addressDto.UserId && (a.IsDefault ?? true))
+                    .ToListAsync();
+                foreach (var addr in existingDefaults)
+                {
+                    addr.IsDefault = false;
+                }
+            }
+
+            // Создаём адрес
+            var address = new Address
+            {
+                UserId = addressDto.UserId,
+                AddressText = addressDto.AddressText,
+                IsDefault = addressDto.IsDefault
+            };
+
+            _context.Addresses.Add(address);
+            await _context.SaveChangesAsync();
+
+            // Формируем ответ
+            var addressResponse = new AddressResponseDTO
+            {
+                Id = address.Id,
+                UserId = address.UserId,
+                AddressText = address.AddressText,
+                IsDefault = address.IsDefault
+            };
+
+            return CreatedAtAction("GetAddress", new { id = addressResponse.Id }, addressResponse);
+        }
+
+        // PUT: api/Addresses/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutAddress(int id, AddressCreateDTO addressDto)
+        {
+            var address = await _context.Addresses.FindAsync(id);
+            if (address == null)
+            {
+                return NotFound();
+            }
+
+            // Проверяем существование пользователя
+            var user = await _context.Users.FindAsync(addressDto.UserId);
+            if (user == null)
+            {
+                return BadRequest("Пользователь не найден");
+            }
+
+            address.UserId = addressDto.UserId;
+            address.AddressText = addressDto.AddressText;
+            address.IsDefault = addressDto.IsDefault;
+
+            // Если адрес становится IsDefault, сбрасываем у других
+            if (addressDto.IsDefault)
+            {
+                var existingDefaults = await _context.Addresses
+                    .Where(a => a.UserId == addressDto.UserId && (a.IsDefault ?? true) && a.Id != id)
+                    .ToListAsync();
+                foreach (var addr in existingDefaults)
+                {
+                    addr.IsDefault = false;
+                }
             }
 
             _context.Entry(address).State = EntityState.Modified;
@@ -63,24 +157,10 @@ namespace ChillAndDrillApI.Controllers
                 {
                     return NotFound();
                 }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
 
             return NoContent();
-        }
-
-        // POST: api/Addresses
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Address>> PostAddress(Address address)
-        {
-            _context.Addresses.Add(address);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetAddress", new { id = address.Id }, address);
         }
 
         // DELETE: api/Addresses/5

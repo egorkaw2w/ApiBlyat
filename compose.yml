@@ -1,0 +1,11 @@
+version: '3'
+services:
+  api_up:
+    image: api_chilla_drilla
+    container_name: chill_drill_api
+    restart: always
+    build:
+      context: .
+      dockerfile: ./ChillAndDrillApI/Dockerfile
+    ports:
+      - "5181:8080"

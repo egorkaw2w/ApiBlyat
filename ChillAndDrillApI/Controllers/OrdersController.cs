@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ChillAndDrillApI.Model;
-using ChillAndDrillApI.Controllers;
 
 namespace ChillAndDrillApI.Controllers
 {
@@ -57,7 +56,7 @@ namespace ChillAndDrillApI.Controllers
                             Id = o.Address.Id,
                             AddressText = o.Address.AddressText
                         },
-                        User = new UserDTO
+                        User = new ChillAndDrillApI.Model.UserDTO
                         {
                             Id = o.User.Id,
                             Login = o.User.Login,
@@ -114,7 +113,7 @@ namespace ChillAndDrillApI.Controllers
                             Id = o.Address.Id,
                             AddressText = o.Address.AddressText
                         },
-                        User = new UserDTO
+                        User = new ChillAndDrillApI.Model.UserDTO
                         {
                             Id = o.User.Id,
                             Login = o.User.Login,
@@ -186,7 +185,7 @@ namespace ChillAndDrillApI.Controllers
                 {
                     UserId = orderDto.UserId,
                     AddressId = orderDto.AddressId,
-                    TotalPrice = orderDto.TotalPrice,
+                    TotalPrice = orderDto.OrderItems.Sum(item => item.Quantity * item.PriceAtOrder),
                     Status = orderDto.Status,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
@@ -228,7 +227,7 @@ namespace ChillAndDrillApI.Controllers
                             Id = o.Address.Id,
                             AddressText = o.Address.AddressText
                         },
-                        User = new UserDTO
+                        User = new ChillAndDrillApI.Model.UserDTO
                         {
                             Id = o.User.Id,
                             Login = o.User.Login,
@@ -306,7 +305,7 @@ namespace ChillAndDrillApI.Controllers
                         Id = order.Address.Id,
                         AddressText = order.Address.AddressText
                     },
-                    User = new UserDTO
+                    User = new ChillAndDrillApI.Model.UserDTO
                     {
                         Id = order.User.Id,
                         Login = order.User.Login,

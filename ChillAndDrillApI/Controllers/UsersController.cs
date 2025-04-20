@@ -1,12 +1,11 @@
-﻿// ChillAndDrillApI/Controllers/UsersController.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChillAndDrillApI.Model;
-using BCrypt.Net; // Для хеширования пароля
+using BCrypt.Net;
 
 namespace ChillAndDrillApI.Controllers
 {
@@ -23,11 +22,11 @@ namespace ChillAndDrillApI.Controllers
 
         // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<ChillAndDrillApI.Model.UserDTO>>> GetUsers()
         {
             return await _context.Users
                 .Include(u => u.Role)
-                .Select(u => new UserDTO
+                .Select(u => new ChillAndDrillApI.Model.UserDTO
                 {
                     Id = u.Id,
                     Login = u.Login,
@@ -45,11 +44,11 @@ namespace ChillAndDrillApI.Controllers
 
         // GET: api/Users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<UserDTO>> GetUser(int id)
+        public async Task<ActionResult<ChillAndDrillApI.Model.UserDTO>> GetUser(int id)
         {
             var user = await _context.Users
                 .Include(u => u.Role)
-                .Select(u => new UserDTO
+                .Select(u => new ChillAndDrillApI.Model.UserDTO
                 {
                     Id = u.Id,
                     Login = u.Login,
@@ -74,7 +73,7 @@ namespace ChillAndDrillApI.Controllers
 
         // POST: api/Users
         [HttpPost]
-        public async Task<ActionResult<UserDTO>> PostUser(UserCreateDTO userDTO)
+        public async Task<ActionResult<ChillAndDrillApI.Model.UserDTO>> PostUser(UserCreateDTO userDTO)
         {
             // Проверяем, существует ли роль (если указана)
             if (userDTO.RoleId.HasValue)
@@ -116,14 +115,14 @@ namespace ChillAndDrillApI.Controllers
                 PasswordHash = passwordHash,
                 RoleId = userDTO.RoleId,
                 AvatarUrl = userDTO.AvatarUrl,
-                CreatedAt = DateTime.Now // Устанавливаем дату создания
+                CreatedAt = DateTime.Now
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             // Формируем DTO для ответа
-            var result = new UserDTO
+            var result = new ChillAndDrillApI.Model.UserDTO
             {
                 Id = user.Id,
                 Login = user.Login,
@@ -142,7 +141,7 @@ namespace ChillAndDrillApI.Controllers
 
         // PUT: api/Users/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, UserDTO userDTO)
+        public async Task<IActionResult> PutUser(int id, ChillAndDrillApI.Model.UserDTO userDTO)
         {
             if (id != userDTO.Id)
             {
@@ -225,20 +224,6 @@ namespace ChillAndDrillApI.Controllers
         {
             return _context.Users.Any(e => e.Id == id);
         }
-    }
-
-    public class UserDTO
-    {
-        public int Id { get; set; }
-        public string Login { get; set; } = null!;
-        public string FullName { get; set; } = null!;
-        public DateOnly? BirthDate { get; set; }
-        public string Phone { get; set; } = null!;
-        public string? Email { get; set; }
-        public string? AvatarUrl { get; set; }
-        public int? RoleId { get; set; }
-        public string RoleName { get; set; } = null!;
-        public DateTime? CreatedAt { get; set; }
     }
 
     public class UserCreateDTO

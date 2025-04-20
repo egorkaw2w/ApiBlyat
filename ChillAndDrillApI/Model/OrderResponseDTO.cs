@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using ChillAndDrillApI.Controllers;
 
 namespace ChillAndDrillApI.Model;
 
@@ -25,10 +24,4 @@ public class OrderItemResponseDTO
     public string MenuItemName { get; set; } = null!;
     public int Quantity { get; set; }
     public decimal PriceAtOrder { get; set; }
-}
-
-public class AddressDTO
-{
-    public int Id { get; set; }
-    public string AddressText { get; set; } = null!;
 }

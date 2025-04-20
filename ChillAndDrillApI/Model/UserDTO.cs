@@ -1,4 +1,5 @@
-﻿namespace ChillAndDrillApI.Model;
+﻿
+namespace ChillAndDrillApI.Model;
 
 public class UserDTO
 {
@@ -7,4 +8,9 @@ public class UserDTO
     public string Email { get; set; } = null!;
     public string RoleName { get; set; } = null!;
     public int? RoleId { get; set; }
+
+    public static implicit operator UserDTO(Controllers.UserDTO v)
+    {
+        throw new NotImplementedException();
+    }
 }

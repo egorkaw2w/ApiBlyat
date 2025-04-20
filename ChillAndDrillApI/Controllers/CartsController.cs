@@ -127,24 +127,31 @@ namespace ChillAndDrillApI.Controllers
 
         // POST: api/Carts
         [HttpPost]
-        public async Task<ActionResult<Cart>> PostCart(Cart cart)
+        public async Task<ActionResult<Cart>> PostCart([FromBody] CartCreateDTO cartDto)
         {
+            Console.WriteLine($"Получен запрос POST /api/Carts с userId={cartDto.UserId}");
+
             // Проверяем, существует ли пользователь
-            var user = await _context.Users.FindAsync(cart.UserId);
+            var user = await _context.Users.FindAsync(cartDto.UserId);
             if (user == null)
             {
-                Console.WriteLine($"Пользователь с UserId={cart.UserId} не найден.");
+                Console.WriteLine($"Пользователь с UserId={cartDto.UserId} не найден.");
                 return BadRequest(new { message = "Пользователь с указанным UserId не существует" });
             }
 
-            // Устанавливаем временные метки
-            cart.CreatedAt = DateTime.Now;
-            cart.UpdatedAt = DateTime.Now;
+            // Создаём объект Cart
+            var cart = new Cart
+            {
+                UserId = cartDto.UserId,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
 
             _context.Carts.Add(cart);
             try
             {
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"Корзина успешно создана с Id={cart.Id}");
             }
             catch (Exception ex)
             {
@@ -175,5 +182,10 @@ namespace ChillAndDrillApI.Controllers
         {
             return _context.Carts.Any(e => e.Id == id);
         }
+    }
+
+    public class CartCreateDTO
+    {
+        public int UserId { get; set; }
     }
 }

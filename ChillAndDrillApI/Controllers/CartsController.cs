@@ -95,7 +95,13 @@ namespace ChillAndDrillApI.Controllers
         {
             if (id != cart.Id)
             {
-                return BadRequest();
+                return BadRequest(new { message = "ID в теле запроса не совпадает с ID в URL" });
+            }
+
+            var user = await _context.Users.FindAsync(cart.UserId);
+            if (user == null)
+            {
+                return BadRequest(new { message = "Пользователь с указанным UserId не существует" });
             }
 
             _context.Entry(cart).State = EntityState.Modified;
@@ -123,10 +129,28 @@ namespace ChillAndDrillApI.Controllers
         [HttpPost]
         public async Task<ActionResult<Cart>> PostCart(Cart cart)
         {
+            // Проверяем, существует ли пользователь
+            var user = await _context.Users.FindAsync(cart.UserId);
+            if (user == null)
+            {
+                Console.WriteLine($"Пользователь с UserId={cart.UserId} не найден.");
+                return BadRequest(new { message = "Пользователь с указанным UserId не существует" });
+            }
+
+            // Устанавливаем временные метки
             cart.CreatedAt = DateTime.Now;
             cart.UpdatedAt = DateTime.Now;
+
             _context.Carts.Add(cart);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при сохранении корзины: {ex.Message}");
+                return StatusCode(500, new { message = "Ошибка сервера при создании корзины" });
+            }
 
             return CreatedAtAction("GetCart", new { id = cart.Id }, cart);
         }

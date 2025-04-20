@@ -22,15 +22,15 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<ChillAndDrillContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Добавляем сервисы контроллеров с настройкой JSON сериализации
+// Добавляем сервисы контроллеров
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; // Игнорируем циклы
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // Игнорируем null-поля
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// Добавляем Swagger
+// Конфигурация Swagger с исправлением конфликта схем
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -39,14 +39,15 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "API для ChillAndDrill"
     });
+
+    // Лучшее решение: Используем полное имя типа как schemaId
+    c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 });
 
 var app = builder.Build();
 
-// Включаем CORS
+// Middleware pipeline
 app.UseCors("AllowLocalhost3000");
-
-// Включаем middleware для Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -57,8 +58,5 @@ app.UseSwaggerUI(c =>
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
-
-// Включаем страницу с подробными ошибками для разработки
 app.UseDeveloperExceptionPage();
-
 app.Run();

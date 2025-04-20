@@ -112,7 +112,7 @@ namespace ChillAndDrillApI.Controllers
 
             // Для хранения в базе данных преобразуем в Kind=Unspecified
             var reservationTimeForDb = DateTime.SpecifyKind(reservationTimeUtc, DateTimeKind.Unspecified);
-            var currentTimeForDb = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var currentTimeForDb = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
             Console.WriteLine($"Current time for DB: {currentTimeForDb}");
 
             // Проверяем корректность времени бронирования

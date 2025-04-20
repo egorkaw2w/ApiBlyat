@@ -116,7 +116,7 @@ namespace ChillAndDrillApI.Controllers
                 PasswordHash = passwordHash,
                 RoleId = userDTO.RoleId,
                 AvatarUrl = userDTO.AvatarUrl,
-                CreatedAt = DateTime.UtcNow // Устанавливаем дату создания
+                CreatedAt = DateTime.Now // Устанавливаем дату создания
             };
 
             _context.Users.Add(user);

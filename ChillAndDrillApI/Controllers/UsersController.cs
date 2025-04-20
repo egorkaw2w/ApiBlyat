@@ -1,12 +1,11 @@
-﻿// ChillAndDrillApI/Controllers/UsersController.cs
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ChillAndDrillApI.Model;
-using BCrypt.Net; // Для хеширования пароля
+using BCrypt.Net;
 
 namespace ChillAndDrillApI.Controllers
 {
@@ -19,6 +18,41 @@ namespace ChillAndDrillApI.Controllers
         public UsersController(ChillAndDrillContext context)
         {
             _context = context;
+        }
+
+        // POST: api/Users/login
+        [HttpPost("login")]
+        public async Task<ActionResult> Login([FromBody] UserLoginDTO loginDTO)
+        {
+            if (string.IsNullOrEmpty(loginDTO.Login) || string.IsNullOrEmpty(loginDTO.Password))
+            {
+                return BadRequest(new { error = "Логин и пароль обязательны." });
+            }
+
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Login == loginDTO.Login);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDTO.Password, user.PasswordHash))
+            {
+                return Unauthorized(new { error = "Неверный логин или пароль." });
+            }
+
+            var userDTO = new UserDTO
+            {
+                Id = user.Id,
+                Login = user.Login,
+                FullName = user.FullName,
+                BirthDate = user.BirthDate,
+                Phone = user.Phone,
+                Email = user.Email,
+                AvatarUrl = user.AvatarUrl,
+                RoleId = user.RoleId,
+                RoleName = user.Role != null ? user.Role.Name : "Без роли",
+                CreatedAt = user.CreatedAt
+            };
+
+            return Ok(new { data = userDTO });
         }
 
         // GET: api/Users
@@ -116,7 +150,7 @@ namespace ChillAndDrillApI.Controllers
                 PasswordHash = passwordHash,
                 RoleId = userDTO.RoleId,
                 AvatarUrl = userDTO.AvatarUrl,
-                CreatedAt = DateTime.Now // Устанавливаем дату создания
+                CreatedAt = DateTime.Now
             };
 
             _context.Users.Add(user);
@@ -251,5 +285,11 @@ namespace ChillAndDrillApI.Controllers
         public string? AvatarUrl { get; set; }
         public string PasswordHash { get; set; } = null!;
         public int? RoleId { get; set; }
+    }
+
+    public class UserLoginDTO
+    {
+        public string Login { get; set; } = null!;
+        public string Password { get; set; } = null!;
     }
 }
